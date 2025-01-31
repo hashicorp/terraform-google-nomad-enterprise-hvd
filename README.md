@@ -1,6 +1,7 @@
-# Nomad Enterprise HVD on GCP
+# Nomad Enterprise HVD on GCP GCE
 
-Terraform module aligned with HashiCorp Validated Designs (HVD) to deploy Nomad Enterprise on Google Cloud Platform (GCP) using VM instances.
+Terraform module aligned with HashiCorp Validated Designs (HVD) to deploy Nomad Enterprise on Google Cloud Platform (GCP) using Compute Engine instances.
+
 
 ## Prerequisites
 
