@@ -40,7 +40,7 @@ variable "application_prefix" {
 }
 
 #------------------------------------------------------------------------------
-# prereqs
+# Prerequisites
 #------------------------------------------------------------------------------
 variable "nomad_license_sm_secret_name" {
   type        = string
