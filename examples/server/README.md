@@ -1,6 +1,6 @@
-# Nomad Enteprise HVD - Server Example
+# Nomad Enteprise HVD - server example
 
-This example will deploy Nomad Servers. Once deployed, Nomad Clients can be deployed from the `clients` example.
+This example will deploy Nomad servers. Once deployed, Nomad clients can be deployed from the `clients` example.
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
