@@ -63,7 +63,7 @@ The following secrets must be stored in **GCP Secrets Manager** to bootstrap the
 
 1. Configure the [prerequisites](#prerequisites).
 
-2. In the `examples` directory, you’ll find subdirectories with ready-made Terraform configurations for deploying this module. Select an example that matches your use case, and copy its contents to a new directory.
+1. In the `examples` directory, you will find subdirectories with ready-made Terraform configurations for deploying this module. Select an example that matches your use case, and copy its contents to a new directory.
 
     >📝 Example structure for managing multiple Nomad deployments:
 
@@ -86,9 +86,9 @@ The following secrets must be stored in **GCP Secrets Manager** to bootstrap the
 
     >📝 This example has two separate Nomad deployments: one for a `sandbox` environment and one for a `production` environment.
 
-3. Update the `terraform.tfvars` file with your custom values, then run `terraform init`, `terraform plan`, and `terraform apply`.
+1. Update the `terraform.tfvars` file with your custom values, then run `terraform init`, `terraform plan`, and `terraform apply`.
 
-4. After `terraform apply` completes successfully, connect to the Nomad EC2 instance shell using SSH to monitor the cloud-init logs:
+1. After `terraform apply` completes successfully, connect to the Nomad EC2 instance shell using SSH to monitor the cloud-init logs:
 
     **Viewing logs:**
 
@@ -96,13 +96,13 @@ The following secrets must be stored in **GCP Secrets Manager** to bootstrap the
     tail -f /var/log/nomad-cloud-init.log
     ```
 
-6. Once the installation finishes, verify the health of the Nomad cluster by checking the Nomad Web UI or by running:
+1. Once the installation finishes, verify the health of the Nomad cluster by checking the Nomad web UI or by running:
 
     ```sh
     nomad server members
     ```
 
-7. If `nomad_acl_enabled` is `true` the Nomad cluster will need to be bootstrapped with the command `nomad acl bootstrap`. This will generate a bootstrap token that can be used to login to the CLI or UI.
+1. If `nomad_acl_enabled` is `true` the Nomad cluster will need to be bootstrapped with the command `nomad acl bootstrap`. This will generate a bootstrap token that can be used to login to the CLI or UI.
 
 ## Module support
 
