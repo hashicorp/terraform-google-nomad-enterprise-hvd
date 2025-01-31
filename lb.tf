@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 
 #------------------------------------------------------------------------------
-# Firewall rules (for GCP Health Check Probes)
+# Firewall rules (for GCP health check probes)
 #------------------------------------------------------------------------------
 resource "google_compute_firewall" "allow_nomad_health_checks" {
   count = var.load_balancing_scheme == "NONE" ? 0 : 1
