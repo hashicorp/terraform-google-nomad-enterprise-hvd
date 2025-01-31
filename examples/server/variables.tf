@@ -441,7 +441,7 @@ variable "nomad_snapshot_gcs_bucket_name" {
 }
 
 #-----------------------------------------------------------------------------------
-# Load Balancer variables
+# Load balancer variables
 #-----------------------------------------------------------------------------------
 variable "load_balancing_scheme" {
   type        = string
