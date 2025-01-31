@@ -14,7 +14,7 @@ Terraform module aligned with HashiCorp Validated Designs (HVD) to deploy Nomad 
 
 ### Google
 
-- GCP Project Created
+- GCP Project created
 - Following APIs enabled
   - dns.googleapis.com
   - secretmanager.googleapis.com
