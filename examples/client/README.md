@@ -1,8 +1,8 @@
-# Nomad Enteprise HVD - Default Example
+# Nomad Enteprise HVD - default example
 
-This example will deploy Nomad Clients to join an existing Nomad Cluster.
+This example will deploy Nomad cClients to join an existing Nomad cluster.
 The clients can join via a specified tag with setting `auto_join_tag`
-No Runtimes will be enabled by default. To enable a runtime, modify the `install_runtime` function in the `templates\nomad_custom_data.sh.tpl` with the code to enable any runtimes as needed.
+No runtimes will be enabled by default. To enable a runtime, modify the `install_runtime` function in the `templates\nomad_custom_data.sh.tpl` with the code to enable any runtimes as needed.
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
