@@ -1,3 +1,6 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 #------------------------------------------------------------------------------
 # Firewall rules (for GCP Health Check Probes)
 #------------------------------------------------------------------------------

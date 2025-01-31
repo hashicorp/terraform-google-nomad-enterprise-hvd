@@ -1,3 +1,6 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 data "google_compute_network" "network" {
   name    = var.network
   project = var.network_project_id == null ? var.project_id : var.network_project_id

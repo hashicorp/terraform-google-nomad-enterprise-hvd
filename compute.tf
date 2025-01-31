@@ -1,3 +1,6 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 locals {
   nomad_metadata_template = fileexists("${path.cwd}/templates/${var.nomad_metadata_template}") ? "${path.cwd}/templates/${var.nomad_metadata_template}" : "${path.module}/templates/${var.nomad_metadata_template}"
   nomad_metadata_template_vars = {
