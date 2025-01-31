@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 
 #------------------------------------------------------------------------------
-# Service Account
+# Service account
 #------------------------------------------------------------------------------
 resource "google_service_account" "nomad_sa" {
   account_id   = format("%s-service-account", var.application_prefix)
