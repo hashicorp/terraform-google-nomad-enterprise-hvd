@@ -112,7 +112,7 @@ variable "nomad_server" {
 
 variable "nomad_region" {
   type        = string
-  description = "Specifies the region of the local agent. A region is an abstract grouping of datacenters. Clients are not required to be in the same region as the servers they are joined with, but do need to be in the same datacenter. If not specified, the region is set AWS region."
+  description = "Specifies the region of the local agent. A region is an abstract grouping of datacenters. Clients are not required to be in the same region as the servers they are joined with, but do need to be in the same datacenter."
   default     = null
 }
 
@@ -465,4 +465,3 @@ variable "health_timeout" {
   description = "(optional) How long, in seconds, to wait before claiming failure"
   default     = 15
 }
-
