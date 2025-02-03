@@ -1,4 +1,4 @@
-# Nomad Enteprise HVD - client example
+# Nomad Enterprise HVD - client example
 
 This example deploys Nomad clients to join an existing Nomad cluster. The clients can join via a specified tag with setting `auto_join_tag`.
 

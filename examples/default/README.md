@@ -1,4 +1,4 @@
-# Nomad Enteprise HVD - default example
+# Nomad Enterprise HVD - default example
 
 This example deploys Nomad servers and clients on the same node for a lab or demo environment.
 
