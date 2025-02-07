@@ -9,7 +9,7 @@ Terraform module aligned with HashiCorp Validated Designs (HVD) to deploy Nomad 
 
 - Terraform CLI `>= 1.9` installed on workstations.
 - `Git` CLI and Visual Studio Code editor installed on workstations are strongly recommended.
-- Google account that Boundary will be hosted in with permissions to provision these [resources](#resources) via Terraform CLI.
+- Google account that Nomad will be hosted in with permissions to provision these [resources](#resources) via Terraform CLI.
 - (Optional) Google GCS for [GCS Remote State backend](https://developer.hashicorp.com/terraform/language/settings/backends/gcs) that will solely be used to stand up the Boundary infrastructure via Terraform CLI (Community Edition).
 
 ### Google
