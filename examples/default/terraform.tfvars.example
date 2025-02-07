@@ -1,0 +1,15 @@
+project_id                         = "<google project id>"
+region                             = "australia-southeast2"
+subnetwork                         = "nomad-prereq-subnet"
+network                            = "nomad-prereq-vpc"
+nomad_license_sm_secret_name       = "nomad-license"
+nomad_tls_cert_sm_secret_name      = "nomad-tls-cert-base64"
+nomad_tls_privkey_sm_secret_name   = "nomad-tls-privkey-base64"
+nomad_tls_ca_bundle_sm_secret_name = "nomad-tls-ca-cert-base64"
+nomad_gossip_key_secret_name       = "nomad-gossip-key"
+create_cloud_dns_record            = false
+nomad_client                       = true
+nomad_datacenter                   = "dc1"
+nomad_fqdn                         = "nomad.service.consul"
+nomad_region                       = "global"
+nomad_server                       = true
