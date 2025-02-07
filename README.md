@@ -88,7 +88,7 @@ The following secrets must be stored in **GCP Secrets Manager** to bootstrap the
 
 1. Update the `terraform.tfvars` file with your custom values, then run `terraform init`, `terraform plan`, and `terraform apply`.
 
-1. After `terraform apply` completes successfully, connect to the Nomad EC2 instance shell using SSH to monitor the cloud-init logs:
+1. After `terraform apply` completes successfully, connect to the Nomad compute instance shell using SSH to monitor the cloud-init logs:
 
     **Viewing logs:**
 
