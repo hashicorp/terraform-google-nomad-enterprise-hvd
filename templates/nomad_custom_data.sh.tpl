@@ -15,6 +15,9 @@ NOMAD_DIR_BIN="${nomad_dir_bin}"
 CNI_DIR_BIN="${cni_dir_bin}"
 NOMAD_USER="nomad"
 NOMAD_GROUP="nomad"
+PRODUCT="nomad"
+NOMAD_VERSION="${nomad_version}"
+VERSION=$NOMAD_VERSION
 
 REQUIRED_PACKAGES="curl jq unzip"
 ADDITIONAL_PACKAGES="${additional_package_names}"
@@ -52,6 +55,29 @@ function detect_os_distro {
     esac
 
     echo "$OS_DISTRO_DETECTED"
+}
+
+function detect_architecture {
+  local ARCHITECTURE=""
+  local OS_ARCH_DETECTED=$(uname -m)
+
+  case "$OS_ARCH_DETECTED" in
+    "x86_64"*)
+      ARCHITECTURE="linux_amd64"
+      ;;
+    "aarch64"*)
+      ARCHITECTURE="linux_arm64"
+      ;;
+		"arm"*)
+      ARCHITECTURE="linux_arm"
+			;;
+    *)
+      log "ERROR" "Unsupported architecture detected: '$OS_ARCH_DETECTED'. "
+		  exit_script 1
+  esac
+
+  echo "$ARCHITECTURE"
+
 }
 
 # https://cloud.google.com/sdk/docs/install-sdk#linux
@@ -437,6 +463,10 @@ function main {
 
   OS_DISTRO=$(detect_os_distro)
   log "INFO" "Detected Linux OS distro is '$OS_DISTRO'."
+
+  OS_ARCH=$(detect_architecture)
+	log "INFO" "Detected architecture is '$OS_ARCH'."
+
   scrape_vm_info
   install_prereqs "$OS_DISTRO"
   install_gcloud_sdk "$OS_DISTRO"
