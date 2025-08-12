@@ -222,7 +222,7 @@ function directory_create {
 }
 
 function checksum_verify {
-  local os_arch="$1"
+  local OS_ARCH="$1"
 
   # https://www.hashicorp.com/en/trust/security
   # checksum_verify downloads the $$PRODUCT binary and verifies its integrity
@@ -263,20 +263,23 @@ function checksum_verify {
 }
 
 # install_nomad_binary downloads the Nomad binary and puts it in dedicated bin directory
-# function install_nomad_binary {
-#     log "INFO" "Installing Nomad binary to: $NOMAD_DIR_BIN..."
+function install_nomad_binary {
+	local OS_ARCH="$1"
 
-#     # Download the Nomad binary to the dedicated bin directory
-#     sudo curl -so $NOMAD_DIR_BIN/nomad.zip $NOMAD_INSTALL_URL
+  log "INFO" "Deploying Nomad Enterprise binary to $NOMAD_DIR_BIN unzip and set permissions"
+	sudo unzip "$${PRODUCT}"_"$${NOMAD_VERSION}"_"$${OS_ARCH}".zip  nomad -d $NOMAD_DIR_BIN
+	sudo unzip "$${PRODUCT}"_"$${NOMAD_VERSION}"_"$${OS_ARCH}".zip -x nomad -d $NOMAD_DIR_LICENSE
+	sudo rm -f "$${PRODUCT}"_"$${NOMAD_VERSION}"_"$${OS_ARCH}".zip
 
-#     # Unzip the Nomad binary
-#     sudo unzip $NOMAD_DIR_BIN/nomad.zip nomad -d $NOMAD_DIR_BIN
-#     sudo unzip $NOMAD_DIR_BIN/nomad.zip -x nomad -d $NOMAD_DIR_LICENSE
+	# Set the permissions for the nomad binary
+	sudo chmod 0755 $NOMAD_DIR_BIN/nomad
+	sudo chown $NOMAD_USER:$NOMAD_GROUP $NOMAD_DIR_BIN/nomad
 
-#     sudo rm $NOMAD_DIR_BIN/nomad.zip
+	# Create a symlink to the Nomad binary in /usr/local/bin
+	sudo ln -sf $NOMAD_DIR_BIN/nomad /usr/local/bin/nomad
 
-#     log "INFO" "Done installing Nomad binary."
-# }
+	log "INFO" "Nomad binary installed successfully at $NOMAD_DIR_BIN/nomad"
+}
 
 function install_cni_plugins {
     log "INFO" "Installing CNI plugins..."
@@ -524,8 +527,10 @@ function main {
 	checksum_verify $OS_ARCH
   log "INFO" "Installing Nomad version $NOMAD_VERSION for $OS_ARCH"
 
-  install_nomad_binary
-  %{ if nomad_client ~}
+  log "INFO" "Installing Nomad version $NOMAD_VERSION for $OS_ARCH"
+  install_nomad_binary  $OS_ARCH
+
+	%{ if nomad_client ~}
   install_runtime
   install_cni_plugins
   configure_sysctl
