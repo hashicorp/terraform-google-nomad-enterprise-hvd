@@ -307,8 +307,8 @@ variable "nomad_metadata_template" {
   description = "(optional) Alternative template file to provide for instance template metadata script. place the file in your local `./templates folder` no path required"
   default     = "nomad_custom_data.sh.tpl"
   validation {
-    condition     = can(fileexists("../../templates/${var.nomad_metadata_template}") || fileexists("./templates/${var.nomad_metadata_template}"))
-    error_message = "File `../../templates/${var.nomad_metadata_template}` or `./templates/${var.nomad_metadata_template} not found or not readable"
+    condition     = can(fileexists("${path.module}/templates/${var.nomad_metadata_template}") || fileexists("${path.cwd}/templates/${var.nomad_metadata_template}"))
+    error_message = "File `${path.module}/templates/${var.nomad_metadata_template}` or `${path.cwd}/templates/${var.nomad_metadata_template}` not found or not readable"
   }
 }
 
