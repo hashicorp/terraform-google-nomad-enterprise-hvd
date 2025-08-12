@@ -29,7 +29,7 @@ locals {
     nomad_fqdn                               = var.nomad_fqdn == null ? "" : var.nomad_fqdn,
     nomad_region                             = var.nomad_region,
     nomad_datacenter                         = var.nomad_datacenter,
-    nomad_install_url                        = format("https://releases.hashicorp.com/nomad/%s/nomad_%s_linux_amd64.zip", var.nomad_version, var.nomad_version),
+    nomad_version                            = var.nomad_version,
     nomad_enable_ui                          = var.nomad_enable_ui,
     nomad_port_api                           = var.nomad_port_api,
     nomad_port_rpc                           = var.nomad_port_rpc,

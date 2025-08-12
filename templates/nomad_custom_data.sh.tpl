@@ -15,7 +15,7 @@ NOMAD_DIR_BIN="${nomad_dir_bin}"
 CNI_DIR_BIN="${cni_dir_bin}"
 NOMAD_USER="nomad"
 NOMAD_GROUP="nomad"
-NOMAD_INSTALL_URL="${nomad_install_url}"
+
 REQUIRED_PACKAGES="curl jq unzip"
 ADDITIONAL_PACKAGES="${additional_package_names}"
 
@@ -121,10 +121,10 @@ function scrape_vm_info {
   INSTANCE_NAME=$(curl -s "http://metadata.google.internal/computeMetadata/v1/instance/name" -H "Metadata-Flavor: Google")
 }
 
-# For Nomad there are a number of supported runtimes, including Exec, Docker, Podman, raw_exec, and more. This function should be modified 
-# to install the runtime that is appropriate for your environment. By default the no runtimes will be enabled. 
+# For Nomad there are a number of supported runtimes, including Exec, Docker, Podman, raw_exec, and more. This function should be modified
+# to install the runtime that is appropriate for your environment. By default the no runtimes will be enabled.
 function install_runtime {
-    log "INFO" "Installing a runtime..."    
+    log "INFO" "Installing a runtime..."
 #   # EXAMPLE: Uncomment to install docker runtime in ubuntu
 #    if [[ "$OS_DISTRO" == "ubuntu" ]]; then
 #        apt-get install -y docker.io
@@ -196,20 +196,20 @@ function directory_create {
 }
 
 # install_nomad_binary downloads the Nomad binary and puts it in dedicated bin directory
-function install_nomad_binary {
-    log "INFO" "Installing Nomad binary to: $NOMAD_DIR_BIN..."
+# function install_nomad_binary {
+#     log "INFO" "Installing Nomad binary to: $NOMAD_DIR_BIN..."
 
-    # Download the Nomad binary to the dedicated bin directory
-    sudo curl -so $NOMAD_DIR_BIN/nomad.zip $NOMAD_INSTALL_URL
+#     # Download the Nomad binary to the dedicated bin directory
+#     sudo curl -so $NOMAD_DIR_BIN/nomad.zip $NOMAD_INSTALL_URL
 
-    # Unzip the Nomad binary
-    sudo unzip $NOMAD_DIR_BIN/nomad.zip nomad -d $NOMAD_DIR_BIN
-    sudo unzip $NOMAD_DIR_BIN/nomad.zip -x nomad -d $NOMAD_DIR_LICENSE
+#     # Unzip the Nomad binary
+#     sudo unzip $NOMAD_DIR_BIN/nomad.zip nomad -d $NOMAD_DIR_BIN
+#     sudo unzip $NOMAD_DIR_BIN/nomad.zip -x nomad -d $NOMAD_DIR_LICENSE
 
-    sudo rm $NOMAD_DIR_BIN/nomad.zip
+#     sudo rm $NOMAD_DIR_BIN/nomad.zip
 
-    log "INFO" "Done installing Nomad binary."
-}
+#     log "INFO" "Done installing Nomad binary."
+# }
 
 function install_cni_plugins {
     log "INFO" "Installing CNI plugins..."
@@ -288,7 +288,7 @@ autopilot {
 tls {
   http      = true
   rpc       = true
-  cert_file = "$NOMAD_DIR_TLS/cert.pem" 
+  cert_file = "$NOMAD_DIR_TLS/cert.pem"
   key_file  = "$NOMAD_DIR_TLS/key.pem"
 %{ if nomad_tls_ca_bundle_sm_secret_name != null ~}
   ca_file   = "$NOMAD_DIR_TLS/ca.pem"
@@ -465,7 +465,7 @@ function main {
   generate_nomad_config
   template_nomad_systemd
   start_enable_nomad
-  
+
   exit_script 0
 }
 
