@@ -488,7 +488,14 @@ function prepare_disk() {
   local device_label="$3"
   log "DEBUG" "prepare_disk - device_label; $${device_label}"
 
+  sleep 20
+
   local device_id=$(readlink -f /dev/disk/by-id/$${device_name})
+	  if [[ -z "$${device_id}" ]]; then
+    log "ERROR" "No device found attached to device $${device_name}"
+    exit_script 1
+  fi
+
   log "DEBUG" "prepare_disk - device_id; $${device_id}"
 
   mkdir -p  $device_mountpoint
