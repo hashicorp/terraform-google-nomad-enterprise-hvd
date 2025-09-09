@@ -49,3 +49,7 @@ local_*.yaml
 
 # Ignore module-generated Helm overrides file
 module_generated_helm_overrides.yaml
+
+# Ignore pulish-module-version.sh
+publish-module-version.sh
+
