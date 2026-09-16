@@ -102,12 +102,17 @@ variable "nomad_acl_enabled" {
 
 variable "nomad_client" {
   type        = bool
-  description = "Boolean to enable the Nomad client mode."
+  description = "Boolean to enable the Nomad client mode. Exactly one of `nomad_client` or `nomad_server` must be `true`."
+
+  validation {
+    condition     = var.nomad_client != var.nomad_server
+    error_message = "Exactly one of `nomad_client` or `nomad_server` must be true. Both true (dual-role) and both false (no role) are unsupported."
+  }
 }
 
 variable "nomad_server" {
   type        = bool
-  description = "Boolean to enable the Nomad server mode."
+  description = "Boolean to enable the Nomad server mode. Exactly one of `nomad_client` or `nomad_server` must be `true`."
 }
 
 variable "nomad_region" {

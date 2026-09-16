@@ -13,8 +13,8 @@ NOMAD_LICENSE_PATH="$NOMAD_DIR_LICENSE/license.hclic"
 NOMAD_DIR_LOGS="/var/log/nomad"
 NOMAD_DIR_BIN="${nomad_dir_bin}"
 CNI_DIR_BIN="${cni_dir_bin}"
-NOMAD_USER="nomad"
-NOMAD_GROUP="nomad"
+NOMAD_USER="${nomad_client ? "root" : "nomad"}"
+NOMAD_GROUP="${nomad_client ? "root" : "nomad"}"
 PRODUCT="nomad"
 NOMAD_VERSION="${nomad_version}"
 VERSION=$NOMAD_VERSION
@@ -207,17 +207,31 @@ function user_group_create {
 function directory_create {
     log "INFO" "Creating necessary directories..."
 
-    # Define all directories needed as an array
-    directories=($NOMAD_DIR_CONFIG $NOMAD_DIR_DATA $NOMAD_DIR_TLS $NOMAD_DIR_LICENSE $NOMAD_DIR_LOGS $CNI_DIR_BIN $NOMAD_DIR_ALLOC_MOUNTS)
+%{ if nomad_client ~}
+    # Client data directory must be owned by root with mode 0700 per Nomad production guidance.
+    log "INFO" "Creating client data directory $NOMAD_DIR_DATA with root:root 0700"
+    mkdir -p "$NOMAD_DIR_DATA"
+    sudo chown root:root "$NOMAD_DIR_DATA"
+    sudo chmod 0700 "$NOMAD_DIR_DATA"
 
-    # Loop through each item in the array; create the directory and configure permissions
+    # Remaining client directories use standard nomad ownership.
+    client_dirs=($NOMAD_DIR_CONFIG $NOMAD_DIR_TLS $NOMAD_DIR_LICENSE $NOMAD_DIR_LOGS $CNI_DIR_BIN $NOMAD_DIR_ALLOC_MOUNTS)
+    for directory in "$${client_dirs[@]}"; do
+        log "INFO" "Creating $directory"
+        mkdir -p "$directory"
+        sudo chown $NOMAD_USER:$NOMAD_GROUP "$directory"
+        sudo chmod 750 "$directory"
+    done
+%{ else ~}
+    # Server directories use nomad:nomad ownership.
+    directories=($NOMAD_DIR_CONFIG $NOMAD_DIR_DATA $NOMAD_DIR_TLS $NOMAD_DIR_LICENSE $NOMAD_DIR_LOGS $CNI_DIR_BIN $NOMAD_DIR_ALLOC_MOUNTS)
     for directory in "$${directories[@]}"; do
         log "INFO" "Creating $directory"
-
-        mkdir -p $directory
-        sudo chown $NOMAD_USER:$NOMAD_GROUP $directory
-        sudo chmod 750 $directory
+        mkdir -p "$directory"
+        sudo chown $NOMAD_USER:$NOMAD_GROUP "$directory"
+        sudo chmod 750 "$directory"
     done
+%{ endif ~}
 
     log "INFO" "Done creating necessary directories."
 }
@@ -295,12 +309,19 @@ function install_cni_plugins {
 function configure_sysctl {
     log "INFO" "Configuring sysctl settings..."
 
-    # Configure sysctl settings for Nomad
+    # Configure bridge sysctl settings for Nomad clients
     tee -a /etc/sysctl.d/bridge.conf <<-EOF
     net.bridge.bridge-nf-call-arptables = 1
     net.bridge.bridge-nf-call-ip6tables = 1
     net.bridge.bridge-nf-call-iptables = 1
 EOF
+
+    # Reserve the Linux recommended ephemeral port range for Nomad clients
+    tee -a /etc/sysctl.d/nomad-client.conf <<-EOF
+    net.ipv4.ip_local_port_range = 49152 65535
+EOF
+
+    sysctl --system
 }
 
 function generate_nomad_config {
