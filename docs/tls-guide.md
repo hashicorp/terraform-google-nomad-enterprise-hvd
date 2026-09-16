@@ -1,6 +1,6 @@
 # TLS Certificates Guide — Nomad Enterprise HVD on GCP
 
-Nomad enforces strict TLS certificate requirements that standard CA-issued and Let's Encrypt certificates do not satisfy. This guide covers generating, storing, and rotating Nomad-specific TLS certificates for use with the `terraform-google-nomad-enterprise-hvd` module.
+Nomad enforces strict TLS certificate requirements that standard CA-issued and Let's Encrypt certificates do not satisfy. This guide covers generating, storing, and rotating Nomad-specific TLS certificates for use with the `terraform-google-nomad-enterprise-hvd` module using the built-in `nomad tls` CLI commands.
 
 ---
 
@@ -20,219 +20,193 @@ For example, in datacenter `dc1` and region `global`:
 | Client | `client.dc1.global.nomad` |
 | CLI | `cli.global.nomad` |
 
-Standard public CAs do not issue certificates with `.nomad` SANs. You must operate your own CA.
+Standard public CAs do not issue certificates with `.nomad` SANs. Use the `nomad tls` commands to operate your own CA — no third-party tools required.
 
 ---
 
-## Option A — Generate Certificates with `cfssl` (Recommended)
+## Prerequisites
 
-`cfssl` is HashiCorp's recommended tool for generating Nomad PKI certificates.
-
-### 1 — Install `cfssl`
-
-```bash
-# macOS
-brew install cfssl
-
-# Linux (binary)
-curl -Lo /usr/local/bin/cfssl https://github.com/cloudflare/cfssl/releases/latest/download/cfssl_linux-amd64
-curl -Lo /usr/local/bin/cfssljson https://github.com/cloudflare/cfssl/releases/latest/download/cfssljson_linux-amd64
-chmod +x /usr/local/bin/cfssl /usr/local/bin/cfssljson
-```
-
-### 2 — Create the CA Configuration
-
-```bash
-cat > ca-config.json <<EOF
-{
-  "signing": {
-    "default": {
-      "expiry": "87600h"
-    },
-    "profiles": {
-      "nomad": {
-        "usages": ["signing", "key encipherment", "server auth", "client auth"],
-        "expiry": "8760h"
-      }
-    }
-  }
-}
-EOF
-```
-
-### 3 — Generate the CA Certificate
-
-```bash
-cat > ca-csr.json <<EOF
-{
-  "CN": "Nomad CA",
-  "key": {
-    "algo": "rsa",
-    "size": 2048
-  },
-  "names": [
-    {
-      "C": "US",
-      "ST": "California",
-      "L": "San Francisco",
-      "O": "HashiCorp",
-      "OU": "Nomad"
-    }
-  ]
-}
-EOF
-
-cfssl gencert -initca ca-csr.json | cfssljson -bare nomad-ca
-# Produces: nomad-ca.pem (CA cert) and nomad-ca-key.pem (CA private key)
-```
-
-### 4 — Generate the Server Certificate
-
-Replace `dc1` and `global` with your `nomad_datacenter` and `nomad_region` values:
-
-```bash
-cat > server-csr.json <<EOF
-{
-  "CN": "server.dc1.global.nomad",
-  "hosts": [
-    "server.dc1.global.nomad",
-    "localhost",
-    "127.0.0.1"
-  ],
-  "key": {
-    "algo": "rsa",
-    "size": 2048
-  },
-  "names": [
-    {
-      "C": "US",
-      "ST": "California",
-      "L": "San Francisco",
-      "O": "HashiCorp",
-      "OU": "Nomad"
-    }
-  ]
-}
-EOF
-
-cfssl gencert \
-  -ca=nomad-ca.pem \
-  -ca-key=nomad-ca-key.pem \
-  -config=ca-config.json \
-  -profile=nomad \
-  server-csr.json | cfssljson -bare server
-# Produces: server.pem and server-key.pem
-```
-
-### 5 — Generate the Client Certificate
-
-```bash
-cat > client-csr.json <<EOF
-{
-  "CN": "client.dc1.global.nomad",
-  "hosts": [
-    "client.dc1.global.nomad",
-    "localhost",
-    "127.0.0.1"
-  ],
-  "key": {
-    "algo": "rsa",
-    "size": 2048
-  },
-  "names": [
-    {
-      "C": "US",
-      "ST": "California",
-      "L": "San Francisco",
-      "O": "HashiCorp",
-      "OU": "Nomad"
-    }
-  ]
-}
-EOF
-
-cfssl gencert \
-  -ca=nomad-ca.pem \
-  -ca-key=nomad-ca-key.pem \
-  -config=ca-config.json \
-  -profile=nomad \
-  client-csr.json | cfssljson -bare client
-# Produces: client.pem and client-key.pem
-```
-
-### 6 — Generate the CLI Certificate
-
-```bash
-cat > cli-csr.json <<EOF
-{
-  "CN": "cli.global.nomad",
-  "hosts": [
-    "cli.global.nomad",
-    "localhost",
-    "127.0.0.1"
-  ],
-  "key": {
-    "algo": "rsa",
-    "size": 2048
-  }
-}
-EOF
-
-cfssl gencert \
-  -ca=nomad-ca.pem \
-  -ca-key=nomad-ca-key.pem \
-  -config=ca-config.json \
-  -profile=nomad \
-  cli-csr.json | cfssljson -bare cli
-```
+- Nomad Enterprise binary installed locally (`>= 1.9`): `nomad version`
+- A working directory to hold the generated certificate files
 
 ---
 
-## Option B — Generate Certificates with the Nomad CLI
+## Step 1 — Create the Certificate Authority
 
-The Nomad CLI provides a simplified certificate generation workflow:
+Run `nomad tls ca create` once per cluster. This generates a self-signed CA used to sign all node certificates.
 
 ```bash
-# Generate CA
 nomad tls ca create
+```
 
-# Generate server certificate
+This produces two files:
+
+```
+nomad-agent-ca.pem      # CA certificate — distribute to all nodes
+nomad-agent-ca-key.pem  # CA private key — keep secret, used only for signing
+```
+
+### CA create options
+
+| Flag | Default | Description |
+|---|---|---|
+| `-common-name` | `"Nomad Agent CA"` | Common Name field of the CA certificate |
+| `-days` | `1825` (5 years) | Validity period in days |
+| `-domain` | `"nomad"` | Domain for the cluster. Only used with `-name-constraint` |
+| `-name-constraint` | `false` | Restrict the CA to only sign certificates for the specified domain. Recommended for production |
+| `-additional-domain` | | Additional DNS zones to allow when `-name-constraint` is enabled. Can be specified multiple times |
+| `-country` | `"US"` | Certificate country field |
+| `-province` | `"CA"` | Certificate province field |
+| `-locality` | `"San Francisco"` | Certificate locality field |
+| `-organization` | `"HashiCorp Inc."` | Certificate organization field |
+| `-organizational-unit` | `"Nomad"` | Certificate organizational unit field |
+
+**Example: production CA with name constraints**
+
+```bash
+nomad tls ca create \
+  -common-name "My Org Nomad CA" \
+  -name-constraint \
+  -domain nomad \
+  -days 1825
+```
+
+> **Security note:** Store `nomad-agent-ca-key.pem` securely. It is only needed to sign new certificates. Never deploy it to cluster nodes.
+
+---
+
+## Step 2 — Create the Server Certificate
+
+Run `nomad tls cert create -server` to generate a certificate for Nomad server nodes. The certificate SAN is automatically set to `server.<datacenter>.<region>.nomad`.
+
+```bash
 nomad tls cert create -server -dc dc1 -region global
+```
 
-# Generate client certificate
+Replace `dc1` with your `nomad_datacenter` value and `global` with your `nomad_region` value.
+
+This produces:
+
+```
+global-server-nomad.pem      # Server TLS certificate
+global-server-nomad-key.pem  # Server TLS private key
+```
+
+### Cert create options
+
+| Flag | Default | Description |
+|---|---|---|
+| `-server` | | Generate a server certificate |
+| `-client` | | Generate a client certificate |
+| `-cli` | | Generate a CLI certificate |
+| `-dc` | | Datacenter name. Sets the datacenter component of the SAN (`server.<dc>.<region>.nomad`). Required |
+| `-region` | `"global"` | Region name. Sets the region component of the SAN |
+| `-domain` | `"nomad"` | Cluster domain. Must match the `-domain` used when creating the CA |
+| `-days` | `365` (1 year) | Validity period in days |
+| `-ca` | `nomad-agent-ca.pem` | Path to the CA certificate |
+| `-key` | `nomad-agent-ca-key.pem` | Path to the CA private key |
+| `-additional-dnsname` | | Extra SAN DNS names (e.g. a load balancer hostname). Can be specified multiple times. `localhost` is always included |
+| `-additional-ipaddress` | | Extra SAN IP addresses. Can be specified multiple times. `127.0.0.1` is always included |
+
+**Example: server certificate with load balancer DNS name**
+
+```bash
+nomad tls cert create -server \
+  -dc dc1 \
+  -region global \
+  -additional-dnsname "nomad.internal.example.com" \
+  -days 365
+```
+
+---
+
+## Step 3 — Create the Client Certificate
+
+```bash
 nomad tls cert create -client -dc dc1 -region global
+```
 
-# Generate CLI certificate
+This produces:
+
+```
+global-client-nomad.pem      # Client TLS certificate
+global-client-nomad-key.pem  # Client TLS private key
+```
+
+The SAN is automatically set to `client.dc1.global.nomad`.
+
+---
+
+## Step 4 — Create the CLI Certificate
+
+Used for authenticating the local `nomad` CLI against a TLS-enabled cluster.
+
+```bash
 nomad tls cert create -cli -region global
 ```
 
-This produces files named `nomad-agent-ca.pem`, `global-server-nomad.pem`, etc.
+This produces:
+
+```
+global-cli-nomad.pem      # CLI TLS certificate
+global-cli-nomad-key.pem  # CLI TLS private key
+```
 
 ---
 
-## Storing Certificates in GCP Secret Manager
+## Step 5 — Verify the Generated Files
 
-The module expects TLS certificates to be stored as **base64-encoded PEM** in Secret Manager. The boot script decodes them at runtime.
+Confirm the SANs on the server certificate:
 
 ```bash
-# --- Server deployment ---
-# Encode the server certificate and key
-base64 -i server.pem > server.pem.b64
-base64 -i server-key.pem > server-key.pem.b64
-base64 -i nomad-ca.pem > ca.pem.b64
-
-# Store in Secret Manager
-gcloud secrets create nomad-tls-cert-base64 --replication-policy=automatic --project=PROJECT_ID
-gcloud secrets versions add nomad-tls-cert-base64 --data-file=server.pem.b64 --project=PROJECT_ID
-
-gcloud secrets create nomad-tls-privkey-base64 --replication-policy=automatic --project=PROJECT_ID
-gcloud secrets versions add nomad-tls-privkey-base64 --data-file=server-key.pem.b64 --project=PROJECT_ID
-
-gcloud secrets create nomad-tls-ca-cert-base64 --replication-policy=automatic --project=PROJECT_ID
-gcloud secrets versions add nomad-tls-ca-cert-base64 --data-file=ca.pem.b64 --project=PROJECT_ID
+openssl x509 -in global-server-nomad.pem -noout -text | grep -A1 "Subject Alternative"
 ```
 
-> **Note:** For client deployments, repeat the above using `client.pem` and `client-key.pem`. Servers and clients can share the same CA bundle secret.
+Expected output:
+
+```
+X509v3 Subject Alternative Names:
+    DNS:server.dc1.global.nomad, DNS:localhost, IP Address:127.0.0.1
+```
+
+---
+
+## Step 6 — Store Certificates in GCP Secret Manager
+
+The module fetches certificates from GCP Secret Manager at boot time. Certificates must be stored as **base64-encoded PEM** — the boot script decodes them at runtime.
+
+```bash
+# Encode the files
+base64 -i global-server-nomad.pem     > server.pem.b64
+base64 -i global-server-nomad-key.pem > server-key.pem.b64
+base64 -i nomad-agent-ca.pem          > ca.pem.b64
+
+# Store in Secret Manager
+gcloud secrets create nomad-tls-cert-base64 \
+  --replication-policy=automatic --project=PROJECT_ID
+gcloud secrets versions add nomad-tls-cert-base64 \
+  --data-file=server.pem.b64 --project=PROJECT_ID
+
+gcloud secrets create nomad-tls-privkey-base64 \
+  --replication-policy=automatic --project=PROJECT_ID
+gcloud secrets versions add nomad-tls-privkey-base64 \
+  --data-file=server-key.pem.b64 --project=PROJECT_ID
+
+gcloud secrets create nomad-tls-ca-cert-base64 \
+  --replication-policy=automatic --project=PROJECT_ID
+gcloud secrets versions add nomad-tls-ca-cert-base64 \
+  --data-file=ca.pem.b64 --project=PROJECT_ID
+```
+
+For **client** deployments, repeat using `global-client-nomad.pem` and `global-client-nomad-key.pem`. Servers and clients share the same CA secret.
+
+### Secret variable mapping
+
+| `terraform.tfvars` variable | Secret Manager secret | Content |
+|---|---|---|
+| `nomad_tls_cert_sm_secret_name` | `nomad-tls-cert-base64` | Base64-encoded TLS certificate PEM |
+| `nomad_tls_privkey_sm_secret_name` | `nomad-tls-privkey-base64` | Base64-encoded TLS private key PEM |
+| `nomad_tls_ca_bundle_sm_secret_name` | `nomad-tls-ca-cert-base64` | Base64-encoded CA certificate PEM |
 
 ---
 
@@ -241,25 +215,26 @@ gcloud secrets versions add nomad-tls-ca-cert-base64 --data-file=ca.pem.b64 --pr
 | Variable | Description | Default |
 |---|---|---|
 | `nomad_tls_enabled` | Enable TLS on the Nomad listener | `true` |
-| `nomad_tls_cert_sm_secret_name` | Secret Manager secret name for the TLS certificate (base64 PEM) | required |
-| `nomad_tls_privkey_sm_secret_name` | Secret Manager secret name for the TLS private key (base64 PEM) | required |
-| `nomad_tls_ca_bundle_sm_secret_name` | Secret Manager secret name for the CA bundle (base64 PEM) | required |
+| `nomad_tls_cert_sm_secret_name` | Secret Manager secret for the TLS certificate (base64 PEM) | required |
+| `nomad_tls_privkey_sm_secret_name` | Secret Manager secret for the TLS private key (base64 PEM) | required |
+| `nomad_tls_ca_bundle_sm_secret_name` | Secret Manager secret for the CA bundle (base64 PEM) | required |
 | `nomad_tls_disable_client_certs` | Disable mutual TLS client certificate verification | `true` |
 | `nomad_tls_require_and_verify_client_cert` | Require and verify client certificate against system CAs | `false` |
 
-> **Warning:** `nomad_tls_enabled = false` disables all TLS. Never use this in production. It exists only for lab or development environments.
+> **Warning:** `nomad_tls_enabled = false` disables all TLS. Never use this in production.
 
 ---
 
 ## Configuring the Local Nomad CLI for TLS
 
-Export these environment variables to use the Nomad CLI against a TLS-enabled cluster:
+Export these environment variables to use the Nomad CLI against the cluster:
 
 ```bash
 export NOMAD_ADDR="https://nomad.internal.example.com:4646"
-export NOMAD_CACERT="/path/to/nomad-ca.pem"
-export NOMAD_CLIENT_CERT="/path/to/cli.pem"
-export NOMAD_CLIENT_KEY="/path/to/cli-key.pem"
+export NOMAD_CACERT="/path/to/nomad-agent-ca.pem"
+export NOMAD_CLIENT_CERT="/path/to/global-cli-nomad.pem"
+export NOMAD_CLIENT_KEY="/path/to/global-cli-nomad-key.pem"
+export NOMAD_TOKEN="<your-acl-token>"
 ```
 
 Verify connectivity:
@@ -272,26 +247,28 @@ nomad server members
 
 ## Certificate Rotation
 
-Rotating TLS certificates on a live cluster requires a rolling replacement of all instances:
+Rotating certificates on a live cluster uses a rolling MIG replacement. The module always fetches the **`latest`** secret version at boot time.
 
-### 1 — Add the new certificate version to Secret Manager
+### 1 — Generate new certificates
 
 ```bash
-# Create a new version; keep the old one active until rotation completes
-gcloud secrets versions add nomad-tls-cert-base64 \
-  --data-file=new-server.pem.b64 \
-  --project=PROJECT_ID
+nomad tls cert create -server -dc dc1 -region global -days 365
 
-gcloud secrets versions add nomad-tls-privkey-base64 \
-  --data-file=new-server-key.pem.b64 \
-  --project=PROJECT_ID
+base64 -i global-server-nomad.pem     > server-new.pem.b64
+base64 -i global-server-nomad-key.pem > server-key-new.pem.b64
 ```
 
-> The module always fetches the **`latest`** version of each secret at boot time.
+### 2 — Add new versions to Secret Manager
 
-### 2 — Trigger a rolling instance replacement
+```bash
+gcloud secrets versions add nomad-tls-cert-base64 \
+  --data-file=server-new.pem.b64 --project=PROJECT_ID
 
-Force the MIG to replace all instances using the latest secret version:
+gcloud secrets versions add nomad-tls-privkey-base64 \
+  --data-file=server-key-new.pem.b64 --project=PROJECT_ID
+```
+
+### 3 — Trigger a rolling instance replacement
 
 ```bash
 gcloud compute instance-groups managed rolling-action replace \
@@ -302,34 +279,61 @@ gcloud compute instance-groups managed rolling-action replace \
   --max-surge=3
 ```
 
-The MIG creates new instances before terminating old ones (`max-unavailable=0`), keeping the cluster operational throughout rotation.
+New instances start with the new certificates. Old instances are terminated only after new ones pass health checks.
 
-### 3 — Verify the cluster is healthy post-rotation
+### 4 — Verify and clean up
 
 ```bash
+# Confirm cluster is healthy
 nomad server members
 nomad operator autopilot get-config
-```
 
-### 4 — Disable the old secret version (optional)
-
-```bash
+# Disable the old secret version (optional)
 gcloud secrets versions disable OLD_VERSION_NUMBER \
-  --secret=nomad-tls-cert-base64 \
-  --project=PROJECT_ID
+  --secret=nomad-tls-cert-base64 --project=PROJECT_ID
 ```
 
 ---
 
 ## CA Rotation
 
-Rotating the CA is a more involved process. The general approach is:
+Rotating the CA is a two-phase process to avoid any node rejecting peers during the transition.
 
-1. Generate a new CA and issue new certificates signed by the new CA
-2. Add both the old and new CA certificates to the CA bundle secret (concatenated PEM)
-3. Add new certificate and key versions to their respective secrets
-4. Perform a rolling instance replacement (step 2 above)
-5. Once all instances are running with the new certificates, remove the old CA from the bundle
-6. Perform a second rolling replacement to remove the old CA from all instances
+### Phase 1 — Add the new CA alongside the old one
 
-This two-phase rotation ensures no instance rejects peers during the transition.
+```bash
+# Generate new CA
+nomad tls ca create -common-name "My Org Nomad CA v2"
+# Produces: nomad-agent-ca.pem (new), nomad-agent-ca-key.pem (new)
+
+# Concatenate old and new CAs into a bundle
+cat old-nomad-agent-ca.pem nomad-agent-ca.pem > ca-bundle.pem
+base64 -i ca-bundle.pem > ca-bundle.b64
+
+# Update the CA secret with the bundle
+gcloud secrets versions add nomad-tls-ca-cert-base64 \
+  --data-file=ca-bundle.b64 --project=PROJECT_ID
+```
+
+Generate new node certificates signed by the new CA:
+
+```bash
+nomad tls cert create -server -dc dc1 -region global \
+  -ca nomad-agent-ca.pem \
+  -key nomad-agent-ca-key.pem
+```
+
+Update the cert and key secrets, then perform a rolling replacement (see [Certificate Rotation](#certificate-rotation) above). After the rollout, all nodes trust both CAs and use the new leaf certificates.
+
+### Phase 2 — Remove the old CA
+
+Once all nodes are running with the new certificates, update the CA bundle secret to contain only the new CA:
+
+```bash
+base64 -i nomad-agent-ca.pem > ca-new-only.b64
+
+gcloud secrets versions add nomad-tls-ca-cert-base64 \
+  --data-file=ca-new-only.b64 --project=PROJECT_ID
+```
+
+Perform a second rolling replacement to remove the old CA from all running nodes.
