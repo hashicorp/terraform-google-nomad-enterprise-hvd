@@ -133,20 +133,20 @@ Please note that there is no official Service Level Agreement (SLA) for support 
 ## Requirements
 
 | Name | Version |
-|------|---------|
+| ---- | ------- |
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | ~> 1.9 |
 | <a name="requirement_google"></a> [google](#requirement\_google) | ~> 5.39 |
 
 ## Providers
 
 | Name | Version |
-|------|---------|
+| ---- | ------- |
 | <a name="provider_google"></a> [google](#provider\_google) | ~> 5.39 |
 
 ## Resources
 
 | Name | Type |
-|------|------|
+| ---- | ---- |
 | [google_compute_firewall.allow_api](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_firewall) | resource |
 | [google_compute_firewall.allow_iap](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_firewall) | resource |
 | [google_compute_firewall.allow_nomad_health_checks](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_firewall) | resource |
@@ -173,13 +173,13 @@ Please note that there is no official Service Level Agreement (SLA) for support 
 ## Inputs
 
 | Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
-| <a name="input_nomad_client"></a> [nomad\_client](#input\_nomad\_client) | Boolean to enable the Nomad client mode. | `bool` | n/a | yes |
+| ---- | ----------- | ---- | ------- | :------: |
+| <a name="input_nomad_client"></a> [nomad\_client](#input\_nomad\_client) | Boolean to enable the Nomad client mode. Exactly one of `nomad_client` or `nomad_server` must be `true`. | `bool` | n/a | yes |
 | <a name="input_nomad_datacenter"></a> [nomad\_datacenter](#input\_nomad\_datacenter) | Specifies the data center of the local agent. A datacenter is an abstract grouping of clients within a region. Clients are not required to be in the same datacenter as the servers they are joined with, but do need to be in the same region. | `string` | n/a | yes |
 | <a name="input_nomad_fqdn"></a> [nomad\_fqdn](#input\_nomad\_fqdn) | Fully qualified domain name to use for joining peer nodes and optionally DNS | `string` | n/a | yes |
 | <a name="input_nomad_gossip_key_secret_name"></a> [nomad\_gossip\_key\_secret\_name](#input\_nomad\_gossip\_key\_secret\_name) | Name of Secret Manager secret containing Nomad gossip encryption key. | `string` | n/a | yes |
 | <a name="input_nomad_license_sm_secret_name"></a> [nomad\_license\_sm\_secret\_name](#input\_nomad\_license\_sm\_secret\_name) | Name of Secret Manager secret containing Nomad license. | `string` | n/a | yes |
-| <a name="input_nomad_server"></a> [nomad\_server](#input\_nomad\_server) | Boolean to enable the Nomad server mode. | `bool` | n/a | yes |
+| <a name="input_nomad_server"></a> [nomad\_server](#input\_nomad\_server) | Boolean to enable the Nomad server mode. Exactly one of `nomad_client` or `nomad_server` must be `true`. | `bool` | n/a | yes |
 | <a name="input_nomad_tls_ca_bundle_sm_secret_name"></a> [nomad\_tls\_ca\_bundle\_sm\_secret\_name](#input\_nomad\_tls\_ca\_bundle\_sm\_secret\_name) | Name of Secret Manager containing Nomad TLS custom CA bundle. | `string` | n/a | yes |
 | <a name="input_nomad_tls_cert_sm_secret_name"></a> [nomad\_tls\_cert\_sm\_secret\_name](#input\_nomad\_tls\_cert\_sm\_secret\_name) | Name of Secret Manager containing Nomad TLS certificate. | `string` | n/a | yes |
 | <a name="input_nomad_tls_privkey_sm_secret_name"></a> [nomad\_tls\_privkey\_sm\_secret\_name](#input\_nomad\_tls\_privkey\_sm\_secret\_name) | Name of Secret Manager containing Nomad TLS private key. | `string` | n/a | yes |
@@ -245,7 +245,7 @@ Please note that there is no official Service Level Agreement (SLA) for support 
 ## Outputs
 
 | Name | Description |
-|------|-------------|
+| ---- | ----------- |
 | <a name="output_nomad_cli_config"></a> [nomad\_cli\_config](#output\_nomad\_cli\_config) | Environment variables to configure the nomad CLI |
 | <a name="output_nomad_url"></a> [nomad\_url](#output\_nomad\_url) | URL to access Nomad application based on value of `nomad_fqdn` input. |
 <!-- END_TF_DOCS -->
